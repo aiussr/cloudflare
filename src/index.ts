@@ -102,7 +102,9 @@ export default {
       ).all<{ id: number; raw_text: string; category: string; sentiment: number; created_at: string }>();
 
       const total = results.length;
-      const urgent = results.filter(r => r.sentiment < 0.3).length;
+      const urgent = results.filter(r =>
+        (r.category === "Bugs" || r.category === "Billing") && r.sentiment < 0.4
+      ).length;
       const bugs = results.filter(r => r.category === "Bugs").length;
 
       const rows = results

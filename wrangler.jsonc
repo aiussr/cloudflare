@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "pulsepoint-feedback-agent",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-10-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pulsepoint-feedback",
+      "database_id": "81b358d2-d83f-483b-b136-9c449e0a0a60",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "workflows": [
+    {
+      "name": "feedback-analysis-workflow",
+      "binding": "WORKFLOW",
+      "class_name": "FeedbackAnalysisWorkflow"
+    }
+  ]
+}

@@ -37,8 +37,8 @@ export class FeedbackAnalysisWorkflow extends WorkflowEntrypoint<Env, FeedbackPa
         "@cf/huggingface/distilbert-sst-2-int8",
         { text }
       );
-      const positive = (res as { result?: { label: string; score: number }[] })
-        .result?.find((r) => r.label === "POSITIVE");
+      const results = res as { label: string; score: number }[];
+      const positive = results.find((r) => r.label === "POSITIVE");
       return positive ? positive.score : 0.5;
     });
 

@@ -38,18 +38,11 @@ export class FeedbackAnalysisWorkflow extends WorkflowEntrypoint<Env, FeedbackPa
         { text }
       );
 
-      let scores: { label: string; score: number }[] = [];
-      if (Array.isArray(res)) {
-        scores = res as { label: string; score: number }[];
-      } else if ((res as any).result) {
-        scores = (res as any).result;
-      }
-
+      const scores = Array.isArray(res)
+        ? (res as { label: string; score: number }[])
+        : [];
       const positive = scores.find((r) => r.label === "POSITIVE");
-      const negative = scores.find((r) => r.label === "NEGATIVE");
-      if (positive) return positive.score;
-      if (negative) return 1 - negative.score;
-      return 0.5;
+      return positive ? positive.score : 0.5;
     });
 
     await step.do("persist", async () => {
@@ -95,16 +88,25 @@ export default {
 
       const rows = results
         .map((r) => {
-          const isUrgent = r.sentiment < 0.3;
-          const urgencyClass = isUrgent ? "urgent-row" : "";
-          const badgeClass = isUrgent ? "badge-critical" : "badge-normal";
-          const badgeText = isUrgent ? "CRITICAL" : "Normal";
+          const isCritical = (r.category === "Bugs" || r.category === "Billing") && r.sentiment < 0.4;
+          const isHigh = !isCritical && (r.category === "Bugs" || r.category === "Billing");
+          const isMedium = r.category === "Feature Requests" && r.sentiment < 0.3;
 
-          return `<tr class="${urgencyClass}">
+          let priority: string;
+          let badgeClass: string;
+          if (isCritical) { priority = "CRITICAL"; badgeClass = "badge-critical"; }
+          else if (isHigh) { priority = "HIGH"; badgeClass = "badge-high"; }
+          else if (isMedium) { priority = "MEDIUM"; badgeClass = "badge-medium"; }
+          else { priority = "LOW"; badgeClass = "badge-low"; }
+
+          const rowClass = isCritical ? "urgent-row" : "";
+
+          return `<tr class="${rowClass}">
             <td>#${r.id}</td>
             <td class="text-cell">${esc(r.raw_text)}</td>
             <td><span class="tag">${esc(r.category)}</span></td>
-            <td><span class="badge ${badgeClass}">${badgeText} (${r.sentiment.toFixed(2)})</span></td>
+            <td>${r.sentiment.toFixed(2)}</td>
+            <td><span class="badge ${badgeClass}">${priority}</span></td>
             <td class="time">${esc(r.created_at)}</td>
           </tr>`;
         })
@@ -127,7 +129,9 @@ export default {
   .urgent-row { background: rgba(239, 68, 68, 0.1); }
   .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
   .badge-critical { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
-  .badge-normal { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+  .badge-high { background: rgba(249, 115, 22, 0.2); color: #fdba74; }
+  .badge-medium { background: rgba(107, 114, 128, 0.2); color: #d1d5db; }
+  .badge-low { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
   .tag { background: #374151; padding: 4px 10px; border-radius: 99px; font-size: 12px; }
   .text-cell { max-width: 450px; }
   button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
@@ -142,7 +146,7 @@ export default {
   <div class="stat-card" style="border-bottom: 4px solid var(--danger)"><div class="stat-label danger-text">Critical Incidents</div><div class="stat-value danger-text">${urgent}</div></div>
   <div class="stat-card"><div class="stat-label">Bug Reports</div><div class="stat-value">${bugs}</div></div>
 </div>
-<table><thead><tr><th>ID</th><th>Content</th><th>Category</th><th>Sentiment</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table>
+<table><thead><tr><th>ID</th><th>Content</th><th>Category</th><th>Sentiment</th><th>Priority</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table>
 </body></html>`;
       return new Response(html, { headers: { "Content-Type": "text/html;charset=utf-8" } });
     }

@@ -76,6 +76,25 @@ export default {
       return Response.json({ accepted: true }, { status: 202 });
     }
 
+    // Debug endpoint — inspect raw AI response shape
+    if (url.pathname === "/api/debug-sentiment" && request.method === "POST") {
+      let body: FeedbackPayload;
+      try {
+        body = await request.json<FeedbackPayload>();
+      } catch {
+        return Response.json({ error: "Invalid JSON" }, { status: 400 });
+      }
+      const res = await env.AI.run("@cf/huggingface/distilbert-sst-2-int8", {
+        text: body.text,
+      });
+      return Response.json({
+        raw: res,
+        type: typeof res,
+        isArray: Array.isArray(res),
+        keys: res && typeof res === "object" ? Object.keys(res) : [],
+      });
+    }
+
     // Dashboard endpoint
     if (url.pathname === "/" && request.method === "GET") {
       const { results } = await env.DB.prepare(

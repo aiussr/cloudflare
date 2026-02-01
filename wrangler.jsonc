@@ -8,7 +8,7 @@
     {
       "binding": "DB",
       "database_name": "pulsepoint-feedback",
-      "database_id": "PLACEHOLDER_DATABASE_ID",
+      "database_id": "81b358d2-d83f-483b-b136-9c449e0a0a60",
       "migrations_dir": "./migrations"
     }
   ],
